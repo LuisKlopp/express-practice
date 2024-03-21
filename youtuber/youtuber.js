@@ -48,9 +48,50 @@ app.post("/youtubers", (req, res) => {
   let lastKey = keyArray[keyArray.length - 1];
 
   db.set(lastKey + 1, youtuberData);
-  console.log(db.keys());
 
   res.json({
     message: `${youtuberData.channelTitle}님, 유튜버 생활을 응원합니다!`,
   });
+});
+
+app.delete("/youtubers/:id", (req, res) => {
+  let { id } = req.params;
+  id = Number(id);
+  const youtuber = db.get(id);
+
+  if (!youtuber) return res.json({ message: "없는 번호입니다." });
+  const name = youtuber.channelTitle;
+
+  db.delete(id);
+  res.json({
+    message: `${name}delete 호출 잘됨`,
+  });
+});
+
+app.delete("/youtubers", (req, res) => {
+  const errorMessage = db.size
+    ? { message: "전체 삭제완료" }
+    : { message: "삭제할 유튜버가 없습니다." };
+
+  db.clear();
+
+  res.json(errorMessage);
+});
+
+app.put("/youtubers/:id", (req, res) => {
+  let { id } = req.params;
+  id = Number(id);
+  const youtuber = db.get(id);
+
+  if (!youtuber) return res.json({ message: "없는 유튜버 입니다." });
+
+  const prevTitle = youtuber.channelTitle;
+  const newTitle = req.body.newChannelTitle;
+
+  db.set(id, {
+    ...youtuber,
+    channelTitle: newTitle,
+  });
+
+  res.json({ message: `${prevTitle}님, 채널명이 ${newTitle}로 변경됐습니다.` });
 });
