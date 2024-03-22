@@ -26,6 +26,14 @@ db.set(1, youtuber1);
 db.set(2, youtuber2);
 db.set(3, youtuber3);
 
+app.get("/youtubers", (req, res) => {
+  if (db.length !== 0) {
+    const youtubers = Array.from(db.values());
+    return res.json(youtubers);
+  }
+  res.status(404).json({ message: "데이터 없습니다." });
+});
+
 app.get("/youtubers/:id", (req, res) => {
   let { id } = req.params;
   id = Number(id);
@@ -36,21 +44,21 @@ app.get("/youtubers/:id", (req, res) => {
   res.json(youtuber);
 });
 
-app.get("/youtubers", (req, res) => {
-  const youtubers = Array.from(db.values());
-  res.json(youtubers);
-});
-
 app.post("/youtubers", (req, res) => {
   const youtuberData = req.body;
+  const channelTitle = youtuberData.channelTitle;
+  const keyArray = Array.from(db.keys());
+  const lastKey = keyArray[keyArray.length - 1];
 
-  let keyArray = Array.from(db.keys());
-  let lastKey = keyArray[keyArray.length - 1];
+  if (channelTitle) {
+    db.set(lastKey + 1, youtuberData);
+    return res.status(201).json({
+      message: `${channelTitle}님, 유튜버 생활을 응원합니다.`,
+    });
+  }
 
-  db.set(lastKey + 1, youtuberData);
-
-  res.json({
-    message: `${youtuberData.channelTitle}님, 유튜버 생활을 응원합니다!`,
+  res.status(400).json({
+    message: `채널명을 입력해주세요!`,
   });
 });
 
@@ -59,7 +67,7 @@ app.delete("/youtubers/:id", (req, res) => {
   id = Number(id);
   const youtuber = db.get(id);
 
-  if (!youtuber) return res.json({ message: "없는 번호입니다." });
+  if (!youtuber) return res.status(404).json({ message: "없는 번호입니다." });
   const name = youtuber.channelTitle;
 
   db.delete(id);
@@ -69,13 +77,11 @@ app.delete("/youtubers/:id", (req, res) => {
 });
 
 app.delete("/youtubers", (req, res) => {
-  const errorMessage = db.size
-    ? { message: "전체 삭제완료" }
-    : { message: "삭제할 유튜버가 없습니다." };
-
-  db.clear();
-
-  res.json(errorMessage);
+  if (db.size >= 1) {
+    db.clear();
+    return res.json({ message: "전체 유튜버가 삭제되었습니다." });
+  }
+  res.status(404).json({ message: "삭제할 유튜버가 없습니다" });
 });
 
 app.put("/youtubers/:id", (req, res) => {
@@ -83,7 +89,8 @@ app.put("/youtubers/:id", (req, res) => {
   id = Number(id);
   const youtuber = db.get(id);
 
-  if (!youtuber) return res.json({ message: "없는 유튜버 입니다." });
+  if (!youtuber)
+    return res.status(404).json({ message: "없는 유튜버 입니다." });
 
   const prevTitle = youtuber.channelTitle;
   const newTitle = req.body.newChannelTitle;
