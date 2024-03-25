@@ -6,13 +6,24 @@ let db = new Map();
 let id = 1;
 
 const checkFilledObject = (obj) => {
-  if (obj.constructor === Object && Object.keys(obj).length === 0) return false;
+  if (obj.constructor === Object && !Object.keys(obj).length) return false;
   return true;
 };
 
 // 로그인
 router.post("/login", (req, res) => {
-  res.json({ message: "환영합니다." });
+  const { userId, password } = req.body;
+  const dbArray = [...db.values()];
+
+  const loginUser = dbArray.find(
+    (user) => user.userId === userId && user.password === password
+  );
+
+  if (loginUser) {
+    return res.json({ message: "로그인 성공" });
+  }
+
+  res.json({ message: "로그인 실패" });
 });
 
 // 회원가입
