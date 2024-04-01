@@ -1,4 +1,6 @@
 import express from "express";
+import { connection } from "../mariadb.js";
+
 const router = express.Router();
 
 const db = new Map();
@@ -13,43 +15,39 @@ const sendResponse = (res, statusCode, content) => {
 router.get("/", (req, res) => {
   const { userId } = req.body;
 
-  if (!userId) sendResponse(res, 404, "로그인 하세요.");
+  const sql = `SELECT * FROM channels WHERE user_id = ?`;
+  const values = userId;
 
-  const dbArray = Object.values(Object.fromEntries(db));
-  const matchedChannels = dbArray.filter(
-    (channel) => channel.userId === userId
-  );
-
-  if (!matchedChannels.length)
-    return sendResponse(res, 400, "데이터가 없습니다.");
-
-  return sendResponse(res, 200, matchedChannels);
+  connection.query(sql, values, (err, results) => {
+    if (results.length) return sendResponse(res, 200, results);
+    sendResponse(res, 404, "채널 정보를 찾을 수 없습니다.");
+  });
 });
 
 // 채널 생성
 router.post("/", (req, res) => {
-  const { channelTitle, userId } = req.body;
+  const { name, userId } = req.body;
 
-  if (channelTitle && userId) {
-    db.set(dataIndex + 1, req.body);
-    dataIndex++;
+  const sql = `INSERT INTO channels (name, user_id) VALUES (?, ?)`;
+  const values = [name, userId];
 
-    return sendResponse(
-      res,
-      200,
-      `${db.get(dataIndex).channelTitle}님, 채널을 응원합니다`
-    );
-  }
-  sendResponse(res, 400, "채널 타이틀을 입력해주세요.");
+  connection.query(sql, values, (err, results) => {
+    if (name && userId) return sendResponse(res, 201, results);
+    sendResponse(res, 400, "요청 값을 제대로 보내주세요. ");
+  });
 });
 
 // 채널 조회
 router.get("/:id", (req, res) => {
   const id = Number(req.params.id);
-  const channel = db.get(id);
 
-  if (channel) return sendResponse(res, 200, channel);
-  sendResponse(res, 404, "채널 정보를 찾을 수 없습니다.");
+  const sql = `SELECT * FROM channels WHERE id = ?`;
+  const values = id;
+
+  connection.query(sql, [values], (err, results) => {
+    if (results.length) return sendResponse(res, 200, results);
+    sendResponse(res, 404, "채널 정보를 찾을 수 없습니다.");
+  });
 });
 
 // 채널 수정

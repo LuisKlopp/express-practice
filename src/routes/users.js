@@ -15,7 +15,7 @@ router.post("/login", (req, res) => {
   const sql = `SELECT * FROM users WHERE email = ?`;
   const values = email;
 
-  connection.query(sql, [values], (err, results) => {
+  connection.query(sql, values, (err, results) => {
     loginUser = results[0];
     if (loginUser || loginUser.password !== password)
       return sendResponse(res, 404, "회원정보가 올바르지 않습니다..");
